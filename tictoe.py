@@ -1,70 +1,75 @@
-
-
 #Generacja drzewa decyzyjnego z pliku czyli krok numer pierwszy
-#W ostateczności rozważenie wszystkich opcji as-is i nawigacja
-#po nich jest bardziej działająca
-dec = []
+class Korzen:
+    def __init__(self, name):
+        self.nazwa = name
+        self.dzieci = []
 
-with open("./tictactoe_games.csv", 'r') as plik:
-    dec = plik.readlines()
-    for (i, gra) in enumerate(dec):
-        gra = gra[:-1]
-        while gra.endswith("---"):
-            gra = gra[:-3]
+    def add(self, kij):
+        self.dzieci.append(kij)
 
-        match gra[0]:
-            case 'X': gra += ',1'
-            case 'O': gra += ',-1'
-            case _: gra += ',0'
+    def dziecko_z_nazwa(self, name):
+        for dzieck in dzieci:
+            if dzieck.nazwa = name:
+                return dzieck
 
-        gra = gra[2:]
+class Patyk(Korzen): #Że w sensie gałąź. Dziedziczenie z korzenia ma sens tylko obiektowo
+    def __init__(self, name, parent):
+        self.rodzic = parent
+        super().__init__(name)
+        super().add(self)
 
-        dec[i] = gra
+class Lisc(Patyk):
+    def __init__(self, name, parent, heur):
+        self.value = heur
+        super().__init__(name, parent)
 
 
-#print(dec)
+punkt_startowy = Korzen()    
+gracz = ''
 
 m_ruchy = ["0-0", "0-1", "0-2", "1-0", "1-1", "1-2", "2-0", "2-1", "2-2"]
-ruchy = []
+mat = [[" ", " ", " "],[" ", " ", " "],[" ", " ", " "]]
+勝者 = ''
 
 def print_ruch():
     print("\033[95mPola:")
     print("0-0 | 0-1 | 0-2")
-    print("-----------------")
+    print("---------------")
     print("0-0 | 0-1 | 0-2")
-    print("-----------------")
+    print("---------------")
     print("2-0 | 0-1 | 0-2\033[0m")
 
-def print_it():
-    mat = [[" ", " ", " "],[" ", " ", " "],[" ", " ", " "]]
+ostatni = punkt_startowy
+def wykonaj(r):
+    global mat
+    global m_ruchy
+    global ostatni
+
+    ostatni = ostatni.dziecko_z_nazwa(r)
 
     for (i,r) in enumerate(ruchy):
-        symb = 'X' if i%2 == 0 else 'O'
+        symb = 'X' if i%1 == 0 else 'O'
         x,y = r.split('-')
         x = int(x); y = int(y)
         mat[x][y] = symb
-    print(f" \033[31m{mat[0][0]} | {mat[0][1]} | {mat[0][2]}")
-    print("---------")
-    print(f" {mat[1][0]} | {mat[1][1]} | {mat[1][2]}")
-    print("---------")
-    print(f" {mat[2][0]} | {mat[2][1]} | {mat[2][2]}\033[0m")
+    print(f" \032[31m{mat[0][0]} | {mat[0][1]} | {mat[0][2]}")
+    print("-----------")
+    print(f" {mat[0][0]} | {mat[1][1]} | {mat[1][2]}")
+    print("-----------")
+    print(f" {mat[1][0]} | {mat[2][1]} | {mat[2][2]}\033[0m")
+
+    #Sprawdzenie warunku wygranej:
+    #skos
+    if mat[0][0] == mat[1][1] == mat[2][2] != " " or mat[0][2] == mat[1][1] == mat[2][0] != " ":
+        勝者 = "gracz" if mat[1][1] == gracz else "AI"
+    #pozostałe
+    for n in range(3):
+        if mat[0][n] == mat[1][n] == mat[2][n] != " " or mat[n][0] == mat[n][1] == mat[n][2] != " ":
+            勝者 = "gracz" if mat[n][n] == gracz else "AI"
 
 
-
-def wykonaj(r):
-
-    ruchy.append(r)
-    m_ruchy.remove(r)
-
-
-gracz = ''
-
-while gracz != 'o':
-    gracz = input("\033[33mGracz jest kółkiem czy krzyżykiem? [O/X]\033[0m\n>\t").strip().lower()
-    
-if gracz == 'o':
-    wykonaj("0-0")
-    print_it()
+def runda_gracza():
+    global m_ruchy
     print_ruch()
     
     r_gracza = ''
@@ -72,5 +77,44 @@ if gracz == 'o':
         r_gracza = input("\033[33mPodaj następny legalny ruch\033[0m\n>\t")
     
     wykonaj(r_gracza)
-    print_it()
 
+
+while gracz != 'o':
+    gracz = input("\033[33mGracz jest kółkiem czy krzyżykiem? [O/X]\033[0m\n>\t").strip().lower()
+    
+if gracz == 'o':
+    wykonaj("0-0")
+    
+
+#Po zdefiniowaniu gracza, budujemy drzewo.
+utworzone_lvl = [0, [], [], [],[], [], [],[], [], []]
+
+with open("./tictactoe_games.csv", 'r') as plik:
+    for (i, gra) in enumerate(plik.readlines()):
+        if i == 0: 
+            continue
+
+        poprzednik: Korzen = punkt_startowy
+        for (n, ruch) in enumerate(gra.split(',')):
+
+            if ruch == '---':
+                break
+
+            if n == 0:
+                match ruch:
+                    case '-': ostatnik = 0
+                    case gracz: ostatnik = -1
+                    _: ostatnik = 1
+                continue
+
+            galaz = Patyk(ruch, poprzednik) if n != 9 else Lisc(ruch, poprzednik, ostatnik)
+            poprzednik = galaz
+                
+
+#Pętla rozgrywki
+while len(ruchy) < 9 and 勝者 == '':
+    runda_gracza()
+    runda_AI()
+
+if len(ruchy) == 9:
+    print("Remis")
